@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Optimizer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+  .app { max-width: 680px; margin: 0 auto; padding: 16px 12px 40px; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab { padding: 7px 18px; border-radius: 99px; border: 1px solid #ddd; background: transparent; cursor: pointer; font-size: 13px; font-family: inherit; color: #333; }
+  .tab.active { background: #fff; border-color: #999; font-weight: 500; }
+  .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 18px; }
+  .metric { background: #fff; border-radius: 10px; padding: 10px 12px; border: 1px solid #e8e8e8; }
+  .metric-label { font-size: 11px; color: #888; margin-bottom: 3px; }
+  .metric-val { font-size: 20px; font-weight: 600; }
+  .table-wrap { border: 1px solid #e4e4e4; border-radius: 12px; overflow: hidden; background: #fff; }
+  .table-head { display: grid; grid-template-columns: 1.4fr 0.7fr 1.6fr; padding: 8px 14px; background: #f9f9f7; border-bottom: 1px solid #e4e4e4; }
+  .table-head span { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .row { display: grid; grid-template-columns: 1.4fr 0.7fr 1.6fr; padding: 10px 14px; align-items: start; border-bottom: 1px solid #f0f0f0; }
+  .row:last-child { border-bottom: none; }
+  .row.editing { background: #fafaf8; }
+  .cat-name { font-size: 14px; }
+  .cat-amt { font-size: 14px; color: #555; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .note { font-size: 11px; color: #999; margin-top: 3px; }
+  .row-actions { display: flex; gap: 6px; margin-top: 4px; }
+  .btn-sm { padding: 3px 9px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 11px; font-family: inherit; color: #444; }
+  .btn-del { background: none; border: none; cursor: pointer; font-size: 16px; color: #ccc; padding: 0 4px; line-height: 1; }
+  .btn-del:hover { color: #e55; }
+  input[type=text], input[type=number], select, textarea { border: 1px solid #ddd; border-radius: 8px; padding: 5px 8px; font-family: inherit; font-size: 13px; background: #fff; color: #1a1a1a; outline: none; }
+  input:focus, select:focus { border-color: #999; }
+  .add-row { width: 100%; padding: 10px; border: 1px dashed #ccc; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; color: #888; margin-top: 10px; font-family: inherit; }
+  .add-row:hover { background: #fafafa; }
+  .add-form { border: 1px solid #e4e4e4; border-radius: 12px; padding: 14px; background: #fff; margin-top: 10px; }
+  .add-form-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .field label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+  .btn-primary { padding: 7px 16px; border-radius: 8px; border: 1px solid #bbb; background: #f0f0f0; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; }
+  .btn-secondary { padding: 7px 16px; border-radius: 8px; border: 1px solid #e4e4e4; background: none; cursor: pointer; font-size: 13px; font-family: inherit; color: #666; }
+  .q-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .q-tab { padding: 5px 12px; border-radius: 99px; border: 1px solid #ddd; background: transparent; cursor: pointer; font-size: 12px; font-family: inherit; color: #444; }
+  .q-tab.active { background: #fff; border-color: #999; font-weight: 500; }
+  .q-tab.current { color: #1a6bb0; }
+  .rot-card { border: 1px solid #e4e4e4; border-radius: 12px; margin-bottom: 12px; overflow: hidden; background: #fff; }
+  .rot-card-head { padding: 10px 14px; border-bottom: 1px solid #e4e4e4; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .rot-card-name { font-weight: 500; font-size: 14px; }
+  .rot-grid { display: grid; grid-template-columns: repeat(4,1fr); }
+  .rot-cell { padding: 10px 10px; border-right: 1px solid #f0f0f0; }
+  .rot-cell:last-child { border-right: none; }
+  .rot-cell.active-q { background: #f9f9f7; }
+  .rot-q-label { font-size: 10px; color: #aaa; margin-bottom: 4px; font-weight: 600; }
+  .rot-q-label.now { color: #1a6bb0; }
+  .rot-val { font-size: 12px; color: #333; }
+  .rot-val.empty { color: #ccc; font-style: italic; }
+  .update-form { border: 1px solid #e4e4e4; border-radius: 12px; padding: 14px; background: #fff; margin-top: 16px; }
+  .update-form h3 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  @media (max-width: 420px) {
+    .rot-grid { grid-template-columns: repeat(2,1fr); }
+    .rot-cell:nth-child(2) { border-right: none; }
+    .rot-cell:nth-child(3) { border-top: 1px solid #f0f0f0; }
+    .rot-cell:nth-child(4) { border-top: 1px solid #f0f0f0; border-right: none; }
+    .metrics { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>💳 Card Optimizer</h1>
+  <p class="subtitle">Always use the best card for every category.</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('optimizer')">Card Optimizer</button>
+    <button class="tab" onclick="switchTab('rotating')">Rotating Benefits</button>
+  </div>
+
+  <div id="tab-optimizer">
+    <div class="metrics" id="metrics"></div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <span>Category</span><span>Amount</span><span>Best Card</span>
+      </div>
+      <div id="rows"></div>
+    </div>
+    <button class="add-row" onclick="toggleAddForm()">+ Add category</button>
+    <div class="add-form" id="add-form" style="display:none">
+      <div class="add-form-grid">
+        <div class="field"><label>Category</label><input type="text" id="new-name" placeholder="e.g. Streaming" style="width:120px"></div>
+        <div class="field"><label>Amount $</label><input type="number" id="new-amt" placeholder="0" style="width:80px"></div>
+        <div class="field"><label>Card</label><select id="new-card"></select></div>
+        <div class="field" style="flex:1;min-width:180px"><label>Note (why this card?)</label><input type="text" id="new-note" placeholder="e.g. 3% on dining" style="width:100%"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <button class="btn-primary" onclick="addCategory()">Add</button>
+          <button class="btn-secondary" onclick="toggleAddForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-rotating" style="display:none">
+    <p style="font-size:13px;color:#666;margin-bottom:12px">Track quarterly rotating bonuses. Update the optimizer above when a quarter changes.</p>
+    <div class="q-tabs" id="q-tabs"></div>
+    <div id="rot-cards"></div>
+    <div class="update-form">
+      <h3>Add / update a rotating benefit</h3>
+      <div class="add-form-grid">
+        <div class="field"><label>Card</label><select id="rot-card-sel"></select></div>
+        <div class="field"><label>Quarter</label><select id="rot-q-sel"></select></div>
+        <div class="field" style="flex:1;min-width:180px"><label>Categories (5% bonus)</label><input type="text" id="rot-val-inp" placeholder="e.g. Grocery, Gas, Streaming" style="width:100%"></div>
+        <div style="align-self:flex-end"><button class="btn-primary" onclick="saveRotating()">Save</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CARDS = [
+  { id:"csp", name:"Chase Sapphire Preferred", short:"CSP", color:"#1a6b9a" },
+  { id:"cfu", name:"Chase Freedom Unlimited",  short:"CFU", color:"#2e7d32" },
+  { id:"cff", name:"Chase Freedom Flex",        short:"CFF", color:"#1a5c3a" },
+  { id:"rbh", name:"Robinhood Gold",            short:"RBH", color:"#009e05" },
+  { id:"vtx", name:"Venture X",                 short:"VTX", color:"#5c35a0" },
+  { id:"amx", name:"Amex Blue Cash Everyday",  short:"AMEX", color:"#016fcb" },
+  { id:"boa", name:"BoFA Customized Cash",      short:"BoFA", color:"#cc0000" },
+  { id:"blt", name:"Bilt Blue Card",            short:"BILT", color:"#1a1a2e" },
+];
+
+const Q_LABELS = ["Q1 (Jan–Mar)","Q2 (Apr–Jun)","Q3 (Jul–Sep)","Q4 (Oct–Dec)"];
+const CURRENT_Q = 1;
+
+let categories = [
+  { id:1, name:"Rent",       amount:1550, cardId:"blt", note:"Bilt: only card that earns on rent, no fee" },
+  { id:2, name:"Grocery",    amount:300,  cardId:"amx", note:"Amex BCE: 3% at US supermarkets" },
+  { id:3, name:"Insurance",  amount:260,  cardId:"rbh", note:"Robinhood Gold: 3% everywhere" },
+  { id:4, name:"Tolls",      amount:250,  cardId:"rbh", note:"Robinhood Gold: 3% everywhere" },
+  { id:5, name:"Gas",        amount:140,  cardId:"amx", note:"Amex BCE: 3% at US gas stations" },
+  { id:6, name:"Restaurant", amount:126,  cardId:"csp", note:"CSP: 3x points on dining" },
+  { id:7, name:"Internet",   amount:65,   cardId:"rbh", note:"Robinhood Gold: 3% everywhere" },
+  { id:8, name:"Coffee",     amount:56,   cardId:"csp", note:"CSP: 3x points on dining" },
+  { id:9, name:"Yoga",       amount:41,   cardId:"rbh", note:"Robinhood Gold: 3% everywhere" },
+];
+
+let rotating = {
+  cff: {
+    0:"Grocery, Gas, Fitness",
+    1:"Amazon, Wholesale Clubs",
+    2:"Grocery, Gas, Streaming",
+    3:"PayPal, Walmart, Charity"
+  }
+};
+
+let editingId = null;
+let activeTab = "optimizer";
+let activeQ = CURRENT_Q;
+
+function getCard(id){ return CARDS.find(c => c.id === id); }
+
+function switchTab(t){
+  activeTab = t;
+  document.getElementById("tab-optimizer").style.display = t==="optimizer"?"block":"none";
+  document.getElementById("tab-rotating").style.display  = t==="rotating" ?"block":"none";
+  document.querySelectorAll(".tab").forEach((el,i)=> el.classList.toggle("active", (i===0&&t==="optimizer")||(i===1&&t==="rotating")));
+  if(t==="rotating") renderRotating();
+}
+
+function renderMetrics(){
+  const total = categories.reduce((a,c)=>a+c.amount,0);
+  const cards = new Set(categories.map(c=>c.cardId)).size;
+  document.getElementById("metrics").innerHTML = [
+    {label:"Monthly spend", val:"$"+total.toLocaleString()},
+    {label:"Categories",    val:categories.length},
+    {label:"Cards active",  val:cards},
+  ].map(m=>`<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-val">${m.val}</div></div>`).join("");
+}
+
+function pillHtml(card){
+  return `<span class="pill" style="background:${card.color}18;color:${card.color}">${card.short}</span>`;
+}
+
+function renderRows(){
+  const el = document.getElementById("rows");
+  el.innerHTML = categories.map((cat,i)=>{
+    const card = getCard(cat.cardId);
+    const editing = editingId === cat.id;
+    const cardOpts = CARDS.map(c=>`<option value="${c.id}" ${c.id===cat.cardId?"selected":""}>${c.short}</option>`).join("");
+    return `<div class="row ${editing?"editing":""}" id="row-${cat.id}" style="${i<categories.length-1?'':'border-bottom:none'}">
+      <div class="cat-name">
+        ${editing?`<input type="text" value="${cat.name}" onchange="updateCat(${cat.id},'name',this.value)" style="width:90%">`:cat.name}
+      </div>
+      <div class="cat-amt">
+        ${editing?`<input type="number" value="${cat.amount}" onchange="updateCat(${cat.id},'amount',parseFloat(this.value))" style="width:70px">`:("$"+cat.amount)}
+      </div>
+      <div>
+        ${editing?`<select onchange="updateCat(${cat.id},'cardId',this.value)" style="margin-bottom:4px">${cardOpts}</select><br>
+        <input type="text" value="${cat.note||''}" onchange="updateCat(${cat.id},'note',this.value)" placeholder="Why this card?" style="width:100%;margin-top:4px">
+        `:`${card?pillHtml(card):""}<div class="note">${cat.note||""}</div>`}
+        <div class="row-actions">
+          <button class="btn-sm" onclick="toggleEdit(${cat.id})">${editing?"Done":"Edit"}</button>
+          <button class="btn-del" onclick="deleteCat(${cat.id})">×</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function render(){
+  renderMetrics();
+  renderRows();
+  populateCardSelects();
+}
+
+function toggleEdit(id){ editingId = editingId===id?null:id; render(); }
+function updateCat(id, field, val){ categories = categories.map(c=>c.id===id?{...c,[field]:val}:c); render(); }
+function deleteCat(id){ categories = categories.filter(c=>c.id!==id); render(); }
+
+function toggleAddForm(){
+  const f = document.getElementById("add-form");
+  f.style.display = f.style.display==="none"?"block":"none";
+}
+
+function addCategory(){
+  const name = document.getElementById("new-name").value.trim();
+  const amt  = parseFloat(document.getElementById("new-amt").value);
+  const cardId = document.getElementById("new-card").value;
+  const note = document.getElementById("new-note").value.trim();
+  if(!name||isNaN(amt)) return;
+  categories.push({id:Date.now(),name,amount:amt,cardId,note});
+  document.getElementById("new-name").value="";
+  document.getElementById("new-amt").value="";
+  document.getElementById("new-note").value="";
+  toggleAddForm();
+  render();
+}
+
+function populateCardSelects(){
+  const opts = CARDS.map(c=>`<option value="${c.id}">${c.short} – ${c.name}</option>`).join("");
+  ["new-card","rot-card-sel"].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=opts; });
+  const qOpts = Q_LABELS.map((q,i)=>`<option value="${i}">${q}</option>`).join("");
+  const qs = document.getElementById("rot-q-sel"); if(qs) qs.innerHTML=qOpts; if(qs) qs.value=CURRENT_Q;
+}
+
+function renderQTabs(){
+  document.getElementById("q-tabs").innerHTML = Q_LABELS.map((q,i)=>
+    `<button class="q-tab ${i===activeQ?"active":""} ${i===CURRENT_Q?"current":""}" onclick="setQ(${i})">${q}${i===CURRENT_Q?" ●":""}</button>`
+  ).join("");
+}
+
+function setQ(i){ activeQ=i; renderRotating(); }
+
+function renderRotating(){
+  renderQTabs();
+  const cardsWithRot = CARDS.filter(c=>rotating[c.id]);
+  document.getElementById("rot-cards").innerHTML = cardsWithRot.map(card=>{
+    const qData = rotating[card.id]||{};
+    const cells = Q_LABELS.map((q,i)=>`
+      <div class="rot-cell ${i===activeQ?"active-q":""}">
+        <div class="rot-q-label ${i===CURRENT_Q?"now":""}">Q${i+1}${i===CURRENT_Q?" (now)":""}</div>
+        <div class="rot-val ${qData[i]?"":"empty"}">${qData[i]||"Not set"}</div>
+      </div>`).join("");
+    return `<div class="rot-card">
+      <div class="rot-card-head"><span class="dot" style="background:${card.color}"></span><span class="rot-card-name">${card.name}</span></div>
+      <div class="rot-grid">${cells}</div>
+    </div>`;
+  }).join("") || `<p style="color:#aaa;font-size:13px;text-align:center;padding:20px">No rotating benefits added yet. Use the form below.</p>`;
+}
+
+function saveRotating(){
+  const cardId = document.getElementById("rot-card-sel").value;
+  const q = parseInt(document.getElementById("rot-q-sel").value);
+  const val = document.getElementById("rot-val-inp").value.trim();
+  if(!val) return;
+  if(!rotating[cardId]) rotating[cardId]={};
+  rotating[cardId][q]=val;
+  document.getElementById("rot-val-inp").value="";
+  renderRotating();
+}
+
+render();
+</script>
+</body>
+</html>
