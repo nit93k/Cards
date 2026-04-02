@@ -256,15 +256,21 @@ function renderRotating(){
   document.getElementById("rot-cards").innerHTML = cardsWithRot.map(card=>{
     const qData = rotating[card.id]||{};
     const cells = Q_LABELS.map((q,i)=>`
-      <div class="rot-cell ${i===activeQ?"active-q":""}">
+              <div class="rot-cell ${i===activeQ?"active-q":""}">
         <div class="rot-q-label ${i===CURRENT_Q?"now":""}">Q${i+1}${i===CURRENT_Q?" (now)":""}</div>
         <div class="rot-val ${qData[i]?"":"empty"}">${qData[i]||"Not set"}</div>
+        ${qData[i]?`<button class="btn-del" onclick="deleteRotating('${card.id}',${i})" style="margin-top:4px;font-size:12px;color:#ccc">× clear</button>`:""}
       </div>`).join("");
     return `<div class="rot-card">
       <div class="rot-card-head"><span class="dot" style="background:${card.color}"></span><span class="rot-card-name">${card.name}</span></div>
       <div class="rot-grid">${cells}</div>
     </div>`;
   }).join("") || `<p style="color:#aaa;font-size:13px;text-align:center;padding:20px">No rotating benefits added yet. Use the form below.</p>`;
+}
+
+function deleteRotating(cardId, q){
+  if(rotating[cardId]) delete rotating[cardId][q];
+  renderRotating();
 }
 
 function saveRotating(){
